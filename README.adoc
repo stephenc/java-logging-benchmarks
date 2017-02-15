@@ -1,0 +1,98 @@
+== Java Logging Benchmarks
+
+This is a repository of JMH based benchmarks of the three main Java Logging Frameworks:
+
+* Java Utils Logging
+* Apache Log4J
+* Logback
+
+In order to try and be as fair to each logging framework, the benchmarks have been divided up by logging format.
+Each Logging Framework has a default layout for their log messages, so by comparing all the frameworks using all the default layouts we get to see the best like-for-like comparisons.
+
+In order to measure the cost/benefit of using a general utility logging framework, for each set of benchmarks I have written at least one strawman logging implementation.
+The strawmen implementations are free to make optimizations that are not available for a general utility logging framework and can therefore be used to measure the upper limit of performance in order to obtain the required minimal functionality.
+
+NOTE: Suggested improvements to any of the benchmark cases or optimizations of the strawmen are encouraged by Pull Request.
+
+=== Java Util Logging format
+
+This consists of log statements like:
+
+----
+Feb 08, 2017 2:09:19 PM com.example.NameOfLogger nameOfMethodContainingLogStatement
+INFO: Log message
+----
+
+These benchmarks are in the `jul-fmt` directory.
+
+Notes:
+
+1. Logback and Log4J do not collect location information by default as this is a costly operation.
+2. The strawman trades some general utility by optimizing the calling method check because we know that the strawman will not be wrapped in another logging wrapper.
+
+=== Apache Log4j format
+
+This consists of log statements like:
+
+----
+2017-02-08 14:16:29,651 [Name Of Thread] INFO com.example.NameOfLogger - Log message
+----
+
+These benchmarks are in the `log4j-fmt` directory.
+
+=== Logback format
+
+This consists of log statements like:
+
+----
+14:18:17.635 [Name Of Thread] INFO  c.e.NameOfLogger - Log message
+----
+
+These benchmarks are in the `logback-fmt` directory.
+
+Notes:
+
+1. Log4J does not support the abbreviated logger naming strategy, so these benchmarks use the last 36 characters of the name rather than an abbreviated name.
+2. Java Util Logging does not support the abbreviated logger naming strategy, so these benchmarks use a custom formatter which has the side effect of boosting the performance of Java Util Logging.
+3. There are a number of strawmen implementations here to check the side-effects of various choices that can be made by a logging framework.
+
+=== No Logging
+
+Another important case to consider is the case where logging is turned off.
+This set of benchmarks all log at a level below the threshold for output.
+
+These benchmarks are in the `nolog` directory.
+
+Notes:
+
+1. The strawmen implementations all run a background thread that checks for a marker file and will adjust the logging level if the marker file is present.
+This is to ensure that the JVM is aware that there is other code which may change the logging levels as a result of external factors that the JVM cannot anticipate.
+Without this code, there is a risk of an over-aggressive JVM deciding that ther is no code that writes to the `enabled` field, hence it is effectively final and the check can be elided yielding a zero cost logging statement.
+While such a zero cost logging statement would be interesting, it breaks one of the important parts of the general utility logging framework contracts, namely being able to adjust the logging level of a running system.
+2. For reference there is a benchmarks that does not even have a log statement.
+
+=== Building the benchmarks
+
+The benchmarks are built with Apache Maven:
+
+----
+$ mvn clean package
+----
+
+=== Running the benchmarks
+
+You must build the benchmarks before you can run them.
+
+To run the benchmarks:
+
+1. Change into the working directory where you want to run the benchmarks (filesystem performance can affect the benchmarks)
+2. Run the `run.rb` with the JMH parameters you want to use (note that `-v SILENT -rf text -rff _name_` will be passed implicitly
+3. The results will be in the `results` subdirectory of the current directory
+
+The following command will run all the benchmarks with 5 forks of 25 iterations using 4 threads and 30 warm-up iterations
+
+----
+$ mkdir work
+$ cd work
+$ ../run.rb -f 5 -t 4 -i 25 -wi 30
+----

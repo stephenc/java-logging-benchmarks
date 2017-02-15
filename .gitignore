@@ -1,0 +1,23 @@
+target/
+
+# IntelliJ project files 
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# eclipse project file
+.settings
+.classpath
+.project
+build/
+
+/nb-configuration.xml
+
+java*.log
+java*.log.*
+*.txt
+results/
+work/
+threads/
+threads.tar.gz
